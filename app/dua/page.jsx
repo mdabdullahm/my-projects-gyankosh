@@ -83,18 +83,19 @@ export default function DuaPage() {
         </div>
       </div>
 
-      {/* ২. সার্চ বার */}
-      <div className="max-w-4xl mx-auto px-6 -mt-8">
-        <div className="relative group">
+      {/* ২. সার্চ বার - স্টিকি করা হয়েছে */}
+      <div className="sticky top-16 z-30 py-4 -mx-6 px-6 bg-gray-50/80 dark:bg-slate-950/80 backdrop-blur-md transition-all">
+        <div className="max-w-4xl mx-auto relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
           <input 
             type="text" 
             placeholder="দোয়া বা ক্যাটাগরি দিয়ে খুঁজুন..." 
-            className="w-full py-4 pl-12 pr-6 rounded-2xl bg-white dark:bg-slate-900 border-none shadow-xl focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white"
+            className="w-full py-4 pl-12 pr-6 rounded-2xl bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 shadow-xl focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white"
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
+      
 
       {/* ৩. দোয়া লিস্ট গ্রিড */}
       <div className="max-w-4xl mx-auto px-6 mt-12 space-y-8">
