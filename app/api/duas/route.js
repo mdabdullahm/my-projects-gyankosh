@@ -1,13 +1,24 @@
 import { MongoClient, ObjectId } from 'mongodb';
 
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
+// Vercel Build Error ফিক্স করার জন্য এই লাইনটি সবচেয়ে গুরুত্বপূর্ণ
+export const dynamic = 'force-dynamic';
 
-// ১. ডাটাবেস থেকে সব দোয়া পাওয়ার জন্য (GET)
+const uri = process.env.MONGODB_URI;
+
+// বার বার কানেকশন হওয়া আটকাতে একটি গ্লোবাল ক্লায়েন্ট
+let client;
+async function getDB() {
+  if (!client) {
+    client = new MongoClient(uri);
+    await client.connect();
+  }
+  return client.db("gyankoshDB");
+}
+
+// ১. সব দোয়া পাওয়ার জন্য (GET)
 export async function GET() {
   try {
-    await client.connect();
-    const db = client.db("gyankoshDB");
+    const db = await getDB();
     const result = await db.collection("duas").find().toArray();
     return Response.json(result);
   } catch (error) {
@@ -19,10 +30,9 @@ export async function GET() {
 export async function POST(req) {
   try {
     const body = await req.json();
-    await client.connect();
-    const db = client.db("gyankoshDB");
+    const db = await getDB();
     const result = await db.collection("duas").insertOne(body);
-    return Response.json(result, { status: 201 });
+    return Response.json({ success: true, result }, { status: 201 });
   } catch (error) {
     return Response.json({ error: "সেভ করতে সমস্যা" }, { status: 500 });
   }
@@ -33,8 +43,9 @@ export async function DELETE(req) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
-    await client.connect();
-    const db = client.db("gyankoshDB");
+    if (!id) return Response.json({ error: "ID প্রয়োজন" }, { status: 400 });
+
+    const db = await getDB();
     const result = await db.collection("duas").deleteOne({ _id: new ObjectId(id) });
     return Response.json(result);
   } catch (error) {

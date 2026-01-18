@@ -14,22 +14,26 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+// Vercel-এ ডাটা ফেচিং এরর বন্ধ করার জন্য এটি অত্যন্ত জরুরি
+export const dynamic = 'force-dynamic';
+
 export default function DuaPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [allDuas, setAllDuas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
-  const [playingId, setPlayingId] = useState(null); // অডিও বাজানোর জন্য স্টেট
+  const [playingId, setPlayingId] = useState(null);
 
-  // ১. ডাটাবেস থেকে দোয়া লোড করা
+  // ১. ডাটাবেস (Next.js API Route) থেকে দোয়া লোড করা
   useEffect(() => {
     const fetchDuas = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/duas");
-        if (!res.ok) throw new Error("সার্ভার কানেক্ট হতে পারছে না");
+        // নোট: Vercel-এ লোকালহোস্ট কাজ করে না, তাই শুধু /api/duas ব্যবহার করা হয়েছে
+        const res = await fetch("/api/duas"); 
+        if (!res.ok) throw new Error("সার্ভার থেকে ডাটা লোড করা সম্ভব হয়নি।");
         const data = await res.json();
-        setAllDuas(data);
+        setAllDuas(Array.isArray(data) ? data : []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -42,22 +46,14 @@ export default function DuaPage() {
   // ২. অডিও প্লে এবং স্টপ করার ফাংশন
   const toggleAudio = (id, text) => {
     if (playingId === id) {
-      // যদি একই দোয়া আবার ক্লিক করা হয় তবে বন্ধ হবে
       window.speechSynthesis.cancel();
       setPlayingId(null);
     } else {
-      // আগের কোনো অডিও চলতে থাকলে তা বন্ধ করা
       window.speechSynthesis.cancel();
-
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "ar-SA"; // আরবি ভাষা
-      utterance.rate = 0.7;    // পড়ার গতি
-
-      // যখন পড়া শেষ হবে তখন বাটন আবার আগের মতো হয়ে যাবে
-      utterance.onend = () => {
-        setPlayingId(null);
-      };
-
+      utterance.lang = "ar-SA";
+      utterance.rate = 0.7;
+      utterance.onend = () => setPlayingId(null);
       window.speechSynthesis.speak(utterance);
       setPlayingId(id);
     }
@@ -70,7 +66,7 @@ export default function DuaPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // সার্চ ফিল্টার
+  // ৪. সার্চ ফিল্টার
   const filteredDuas = allDuas.filter(dua => 
     dua.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     dua.category?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -82,24 +78,24 @@ export default function DuaPage() {
       {/* হেডার */}
       <div className="bg-emerald-600 dark:bg-emerald-900 text-white pt-10 pb-20 px-6">
         <div className="max-w-4xl mx-auto">
-          <Link href="/" className="flex items-center gap-2 text-emerald-100 hover:text-white mb-6 transition">
+          <Link href="/" className="flex items-center gap-2 text-emerald-100 hover:text-white mb-6 transition font-bold">
             <ArrowLeft className="w-4 h-4" /> ফিরে যান
           </Link>
-          <h1 className="text-3xl md:text-5xl font-bold mb-4 flex items-center gap-3">
+          <h1 className="text-3xl md:text-5xl font-black mb-4 flex items-center gap-3">
             <BookMarked className="w-10 h-10" /> দোয়া ও জিকির
           </h1>
-          <p className="text-emerald-100 text-lg">প্রতিদিনের প্রয়োজনীয় দোয়া অর্থ ও অডিওসহ।</p>
+          <p className="text-emerald-100 text-lg">প্রতিদিনের প্রয়োজনীয় মাসনুন দোয়া এবং আমলসমূহ অর্থ ও রেফারেন্সসহ।</p>
         </div>
       </div>
 
       {/* স্টিকি সার্চ বার */}
-      <div className="sticky top-16 z-30 py-4 -mx-6 px-6 bg-gray-50/80 dark:bg-slate-950/80 backdrop-blur-md transition-all">
+      <div className="sticky top-16 z-30 py-4 -mx-6 px-6 bg-gray-50/80 dark:bg-slate-950/80 backdrop-blur-md transition-all border-b border-gray-100 dark:border-slate-800/50">
         <div className="max-w-4xl mx-auto relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
           <input 
             type="text" 
             placeholder="দোয়া বা ক্যাটাগরি দিয়ে খুঁজুন..." 
-            className="w-full py-4 pl-12 pr-6 rounded-2xl bg-white dark:bg-slate-900 border-none shadow-xl focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white"
+            className="w-full py-4 pl-12 pr-6 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xl focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white transition-all"
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
@@ -107,84 +103,102 @@ export default function DuaPage() {
 
       <div className="max-w-4xl mx-auto px-6 mt-12 space-y-8">
         
+        {/* লোডিং অবস্থা */}
         {loading && (
           <div className="flex flex-col items-center justify-center py-20 text-emerald-600">
              <Loader2 className="w-12 h-12 animate-spin mb-4" />
-             <p className="font-bold">লোড হচ্ছে...</p>
+             <p className="font-bold uppercase tracking-widest text-xs">দোয়াগুলো লোড হচ্ছে...</p>
           </div>
         )}
 
+        {/* এরর অবস্থা */}
         {error && (
-          <div className="text-center py-20 text-rose-500">
+          <div className="text-center py-20 text-rose-500 bg-white dark:bg-slate-900 rounded-[3rem] border border-dashed border-rose-200">
              <AlertCircle className="w-12 h-12 mx-auto mb-4" />
-             <p className="font-bold">{error}</p>
+             <p className="font-bold">দুঃখিত: {error}</p>
+             <button onClick={() => window.location.reload()} className="mt-4 text-sm underline font-bold">আবার চেষ্টা করুন</button>
           </div>
         )}
 
-        {!loading && !error && filteredDuas.map((dua) => (
-          <div 
-            key={dua._id} 
-            className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-10 border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all"
-          >
-            <div className="flex justify-between items-start mb-8">
-              <span className="px-4 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase rounded-full tracking-widest">
-                {dua.category}
-              </span>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => handleCopy(dua._id, `${dua.arabic}\n${dua.meaning}`)}
-                  className="p-3 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-2xl text-foreground/30 hover:text-emerald-600 transition"
-                >
-                  {copiedId === dua._id ? <Check className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <h2 className="text-2xl md:text-3xl font-black mb-8 text-foreground">{dua.title}</h2>
-            
-            <div className="space-y-8">
-              <div className="bg-emerald-50/30 dark:bg-emerald-950/10 p-6 md:p-8 rounded-[2rem] border border-emerald-50 dark:border-emerald-900/20">
-                <p className="text-3xl md:text-5xl text-right font-serif leading-[1.8] text-emerald-700 dark:text-emerald-400 mb-2" dir="rtl">
-                  {dua.arabic}
-                </p>
-              </div>
-
-              <div className="space-y-4 border-l-4 border-emerald-500/30 pl-6 md:pl-10">
-                <div>
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">উচ্চারণ</p>
-                  <p className="text-lg text-foreground/80 font-medium">{dua.pronunciation}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">অর্থ</p>
-                  <p className="text-lg text-foreground/80 italic">"{dua.meaning}"</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-10 pt-8 border-t border-gray-50 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-              
-              {/* অডিও কন্ট্রোল বাটন */}
-              <button 
-                onClick={() => toggleAudio(dua._id, dua.arabic)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all
-                  ${playingId === dua._id 
-                    ? "bg-rose-100 dark:bg-rose-900/30 text-rose-600 animate-pulse shadow-inner" 
-                    : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/40"
-                  }`}
+        {/* দোয়া লিস্ট */}
+        {!loading && !error && (
+          filteredDuas.length > 0 ? (
+            filteredDuas.map((dua) => (
+              <div 
+                key={dua._id} 
+                className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-10 border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300"
               >
-                {playingId === dua._id ? (
-                  <><Square className="w-4 h-4 fill-current" /> বন্ধ করুন</>
-                ) : (
-                  <><Volume2 className="w-5 h-5" /> অডিও শুনুন</>
-                )}
-              </button>
+                <div className="flex justify-between items-start mb-8">
+                  <span className="px-4 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase rounded-full tracking-widest border border-emerald-100 dark:border-emerald-800/50">
+                    {dua.category}
+                  </span>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleCopy(dua._id, `${dua.title}\n${dua.arabic}\n${dua.meaning}`)}
+                      className="p-3 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-2xl text-foreground/30 hover:text-emerald-600 transition"
+                      title="কপি করুন"
+                    >
+                      {copiedId === dua._id ? <Check className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
+                    </button>
+                    <button className="p-3 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-2xl text-foreground/30 hover:text-emerald-600 transition">
+                      <Share2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
 
-              <span className="text-[10px] text-foreground/40 font-bold uppercase tracking-widest bg-gray-50 dark:bg-slate-800 px-4 py-2 rounded-xl">
-                রেফারেন্স: {dua.reference || "সংগ্রহীত"}
-              </span>
+                <h2 className="text-2xl md:text-3xl font-black mb-8 text-foreground leading-tight tracking-tight">{dua.title}</h2>
+                
+                <div className="space-y-8">
+                  {/* আরবি টেক্সট */}
+                  <div className="bg-emerald-50/20 dark:bg-emerald-950/10 p-6 md:p-10 rounded-[2rem] border border-emerald-50 dark:border-emerald-900/10">
+                    <p className="text-3xl md:text-5xl text-right font-serif leading-[1.8] text-emerald-700 dark:text-emerald-400 mb-2 tracking-wide" dir="rtl">
+                      {dua.arabic}
+                    </p>
+                  </div>
+
+                  <div className="space-y-6 border-l-4 border-emerald-500/20 pl-6 md:pl-10">
+                    <div>
+                      <p className="text-[10px] font-black text-emerald-600/50 dark:text-emerald-500/50 uppercase tracking-[0.2em] mb-1">উচ্চারণ</p>
+                      <p className="text-lg md:text-xl text-foreground/80 font-medium leading-relaxed">{dua.pronunciation}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-emerald-600/50 dark:text-emerald-500/50 uppercase tracking-[0.2em] mb-1">বাংলা অর্থ</p>
+                      <p className="text-lg md:text-xl text-foreground/80 leading-relaxed italic">"{dua.meaning}"</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-10 pt-8 border-t border-gray-50 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  
+                  {/* অডিও কন্ট্রোল বাটন */}
+                  <button 
+                    onClick={() => toggleAudio(dua._id, dua.arabic)}
+                    className={`flex items-center gap-2 px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all
+                      ${playingId === dua._id 
+                        ? "bg-rose-100 dark:bg-rose-900/30 text-rose-600 animate-pulse" 
+                        : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/40"
+                      }`}
+                  >
+                    {playingId === dua._id ? (
+                      <><Square className="w-4 h-4 fill-current" /> বন্ধ করুন</>
+                    ) : (
+                      <><Volume2 className="w-5 h-5" /> অডিও শুনুন</>
+                    )}
+                  </button>
+
+                  <span className="text-[10px] text-foreground/30 font-bold uppercase tracking-widest bg-gray-50 dark:bg-slate-800/50 px-5 py-2 rounded-xl border border-gray-100 dark:border-slate-800">
+                    রেফারেন্স: {dua.reference || "সংগ্রহীত"}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-24 text-foreground/20 italic">
+              <Search className="w-16 h-16 mx-auto mb-4 opacity-10" />
+              <p className="text-xl font-bold">দুঃখিত, কোনো দোয়া খুঁজে পাওয়া যায়নি।</p>
             </div>
-          </div>
-        ))}
+          )
+        )}
       </div>
     </div>
   );
