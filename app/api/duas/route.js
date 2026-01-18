@@ -1,34 +1,35 @@
 import { MongoClient, ObjectId } from 'mongodb';
 
-// Vercel Build Error ফিক্স করার জন্য এটি অত্যন্ত জরুরি
 export const dynamic = 'force-dynamic';
 
 const uri = process.env.MONGODB_URI;
 
-// ডাটাবেস কানেকশনের জন্য একটি ফাংশন (এটি বিল্ড টাইমে এরর আটকাবে)
-async function connectToDatabase() {
+// ডাটাবেস কানেকশন ফাংশন
+async function getDuaCollection() {
+  console.log("🛠️ [API]: ডাটাবেসে কানেক্ট করার চেষ্টা করছি...");
   if (!uri) {
-    throw new Error("MONGODB_URI এনভায়রনমেন্ট ভ্যারিয়েবলটি পাওয়া যায়নি।");
+    console.error("❌ [ERROR]: MONGODB_URI পাওয়া যায়নি! Vercel Settings চেক করুন।");
+    throw new Error("MONGODB_URI is missing");
   }
   const client = new MongoClient(uri);
   await client.connect();
   const db = client.db("gyankoshDB");
-  return { client, db };
+  return { client, collection: db.collection("duas") };
 }
 
 // ১. সব দোয়া পাওয়ার জন্য (GET)
 export async function GET() {
+  console.log("🔍 [GET]: ডাটা খোঁজা হচ্ছে...");
   let client;
   try {
-    const connection = await connectToDatabase();
+    const connection = await getDuaCollection();
     client = connection.client;
-    const db = connection.db;
-    
-    const result = await db.collection("duas").find().toArray();
+    const result = await connection.collection.find().toArray();
+    console.log("✅ [GET]: মোট দোয়া পাওয়া গেছে:", result.length);
     return Response.json(result);
   } catch (error) {
-    console.error("Database Error:", error);
-    return Response.json({ error: "ডাটা আনতে সমস্যা হয়েছে" }, { status: 500 });
+    console.error("❌ [GET ERROR]:", error.message);
+    return Response.json({ error: error.message }, { status: 500 });
   } finally {
     if (client) await client.close();
   }
@@ -36,17 +37,18 @@ export async function GET() {
 
 // ২. নতুন দোয়া যোগ করার জন্য (POST)
 export async function POST(req) {
+  console.log("📥 [POST]: নতুন ডাটা আসছে...");
   let client;
   try {
     const body = await req.json();
-    const connection = await connectToDatabase();
+    const connection = await getDuaCollection();
     client = connection.client;
-    const db = connection.db;
-
-    const result = await db.collection("duas").insertOne(body);
+    const result = await connection.collection.insertOne(body);
+    console.log("🚀 [POST]: সফলভাবে সেভ হয়েছে, ID:", result.insertedId);
     return Response.json({ success: true, result }, { status: 201 });
   } catch (error) {
-    return Response.json({ error: "সেভ করতে সমস্যা" }, { status: 500 });
+    console.error("❌ [POST ERROR]:", error.message);
+    return Response.json({ error: error.message }, { status: 500 });
   } finally {
     if (client) await client.close();
   }
@@ -58,15 +60,15 @@ export async function DELETE(req) {
     try {
       const { searchParams } = new URL(req.url);
       const id = searchParams.get('id');
-      
-      const connection = await connectToDatabase();
-      client = connection.client;
-      const db = connection.db;
+      console.log("🗑️ [DELETE]: এই আইডি ডিলিট হবে:", id);
 
-      const result = await db.collection("duas").deleteOne({ _id: new ObjectId(id) });
+      const connection = await getDuaCollection();
+      client = connection.client;
+      const result = await connection.collection.deleteOne({ _id: new ObjectId(id) });
       return Response.json(result);
     } catch (error) {
-      return Response.json({ error: "ডিলিট করতে সমস্যা" }, { status: 500 });
+      console.error("❌ [DELETE ERROR]:", error.message);
+      return Response.json({ error: error.message }, { status: 500 });
     } finally {
       if (client) await client.close();
     }
