@@ -126,7 +126,7 @@ export default function HomePage() {
           <div>
             <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-600 mb-2">আজকের বিশেষ পাঠ</h3>
             <p className="text-xl font-medium italic text-foreground leading-relaxed">
-              "বলুন, হে আমার প্রতিপালক! আমার জ্ঞান বৃদ্ধি করে দিন।" (সূরা ত্বহা: ১১৪)
+              "বলুন, হে আমার প্রতিপালক! আমার জ্ঞান বৃদ্ধি করে দিন। বলুন, হে আমার প্রতিপালক! আমার জ্ঞান বৃদ্ধি করে দিন।" (সূরা ত্বহা: ১১৪)
             </p>
           </div>
         </div>
