@@ -1,14 +1,15 @@
 "use client";
 import Link from "next/link";
-import { 
-  LayoutDashboard, 
-  BookMarked, 
-  Terminal, 
-  Lightbulb, 
-  AlertCircle, 
-  Settings, 
+import {
+  LayoutDashboard,
+  BookMarked,
+  Terminal,
+  Lightbulb,
+  AlertCircle,
+  Settings,
   LogOut,
-  Home
+  Home,
+  Camera
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -19,6 +20,8 @@ export default function AdminLayout({ children }) {
     { name: "ওয়েব ও প্রযুক্তি", href: "/admin/tech", icon: <Terminal className="w-5 h-5" /> },
     { name: "সাধারণ জ্ঞান", href: "/admin/general-knowledge", icon: <Lightbulb className="w-5 h-5" /> },
     { name: "গুরুত্বপূর্ণ", href: "/admin/important", icon: <AlertCircle className="w-5 h-5" /> },
+    // sidebarLinks অ্যারেতে এটি যোগ করুন
+    { name: "ফটো গ্যালারি", href: "/admin/gallery", icon: <Camera className="w-5 h-5" /> },
   ];
 
   return (
@@ -34,8 +37,8 @@ export default function AdminLayout({ children }) {
 
         <nav className="flex-grow px-4 space-y-2">
           {sidebarLinks.map((link) => (
-            <Link 
-              key={link.name} 
+            <Link
+              key={link.name}
               href={link.href}
               className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-all font-medium text-foreground/70 hover:text-emerald-600"
             >
@@ -58,8 +61,8 @@ export default function AdminLayout({ children }) {
       {/* ২. মেইন কন্টেন্ট এরিয়া */}
       <main className="flex-grow flex flex-col min-w-0">
         <header className="h-16 border-b border-gray-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md px-8 flex items-center justify-between md:hidden">
-            <span className="font-bold text-emerald-600">অ্যাডমিন</span>
-            <ThemeToggle />
+          <span className="font-bold text-emerald-600">অ্যাডমিন</span>
+          <ThemeToggle />
         </header>
         <div className="p-8 md:p-12 overflow-y-auto">
           {children}
